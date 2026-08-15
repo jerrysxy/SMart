@@ -1,47 +1,75 @@
-<h1 align="center">TEAM 58</h1>
+# SMart
 
-<h3 align="center">🔴🚨 Live SMart website: <a href="https://smart-k1xu.onrender.com/">SMart</a> 🚨🔴</h3>
-<h5 align="center"><em>(Do note that it can take up to 2 minutes to load as it is a sample site)</em> </h5>
+A campus marketplace web application for students at the Singapore Institute of Management, supporting buying, selling, trading and donating items within the student community.
 
-<br>
+Built by Team 58 for CM2020 Agile Software Projects, BSc Computer Science, University of London.
 
-<h3 align="center">How to run the code</h3>
+[Live demo](https://smart-k1xu.onrender.com/) · [Demo video](https://drive.google.com/file/d/1T8clmBOWnLLcRw6_3YfdbfHe7PjVF7ig/view)
 
-- The Web application is split into **frontend** and **backend**.
+## Features
 
-- Download both **backend** and **frontend** into a single repository
-- cd into **backend**
-  
-- Run the following commands 
-  - npm i (Install the node package modules)
-  - npm i express-session (Install express sessions)
-  - npm run build-db (Build the database)
-  - npm run start (To run the program)
- 
-- Log in using any of these accounts
-  - email: seanTest@mymail.sim.edu.sg
-    password: P@ssword1
-  - email: matthewTest@mymail.sim.edu.sg
-    password: P@ssword2
+- Listing creation with image upload, categories and keyword search
+- Offers, favourites and peer reviews between users
+- Session-based authentication restricted to SIM email addresses
+- User profiles with course details and seller ratings
 
-    
-**Issues (potential)**
-- You may notice an error in building the code. Most of the error comes from the db. Run the following command in the terminal to view sql db issue. It manually executes schema file
-  - *sqlite3 backend/database.db < backend/db_schema.sql*
+## Tech stack
 
+| Layer | Technology |
+| --- | --- |
+| Backend | Node.js, Express |
+| Views | EJS |
+| Database | SQLite |
+| Auth | express-session, bcrypt password hashing |
+| File uploads | multer |
+| Hosting | Render (backend), Vercel (frontend) |
 
-<h3 align="center"> 🚨This branch is used for Website hosting </h3>
+## Database design
 
-- ⚙️ **Render** is used to host the Backend repository
+Six normalised tables with foreign key constraints, `CHECK` validation and cascade rules, with `PRAGMA foreign_keys` enabled. Every database call uses parameterised queries. Full schema in [`backend/db_schema.sql`](backend/db_schema.sql).
 
-- 🖥️ **Vercel** is used to host the Frontend repository
+## Running locally
 
-**DO NOTE:**
-- ❗LIVE SITE: The free server on render uses ephemeral storage for the filesystem. As such any changes made during runtime will not be preserved while deployed and the SQLite database might be reset 
-  
-- It may take up to 1 minute to load the website.
+Requires **Node 20**. Newer versions have no prebuilt binary for `sqlite3` and will try to compile it from source.
 
+```bash
+cd backend
+npm install
+npm run build-db
+npm start
+```
 
-<h3 align="center"> Demo Video for reference: <a href="https://drive.google.com/file/d/1T8clmBOWnLLcRw6_3YfdbfHe7PjVF7ig/view">SMart Demo Video</a> </h3>
+Then open <http://localhost:3000>.
 
+The backend serves the EJS views and static assets from `../frontend`, so there is no separate frontend step.
 
+### Demo accounts
+
+| Email | Password |
+| --- | --- |
+| `seanTest@mymail.sim.edu.sg` | `P@ssword1` |
+| `matthewTest@mymail.sim.edu.sg` | `P@ssword2` |
+
+Seed accounts defined in `db_schema.sql`, for local testing only.
+
+### If the database fails to build
+
+`npm run build-db` pipes the schema through the `sqlite3` CLI. If that errors, run the schema directly to see the underlying SQL error:
+
+```bash
+sqlite3 backend/database.db < backend/db_schema.sql
+```
+
+## Security
+
+Authentication was reworked after the original submission:
+
+- Passwords are hashed with bcrypt instead of stored and compared in plaintext
+- Login looks users up by email, then verifies the hash separately
+- Submitted credentials are no longer written to application logs
+- The password hash is stripped from the user object before it enters the session store
+- The session secret is read from the `SESSION_SECRET` environment variable
+
+## Notes on the live demo
+
+Hosted on Render's free tier. The first request after a period of inactivity can take up to a minute while the instance wakes. The filesystem is ephemeral, so data created on the live site does not survive a restart. Run it locally for a full picture.
