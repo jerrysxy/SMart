@@ -9,6 +9,7 @@ const session = require('express-session');
 const cookieParser = require('cookie-parser');
 const SQLiteStore = require('connect-sqlite3')(session);
 const sqlite3 = require('sqlite3').verbose();
+const bcrypt = require('bcryptjs');
 const indexRoute = require('./routes/indexRoute.js');
 const { 
     getImagesForProducts,
@@ -45,7 +46,7 @@ app.use(cookieParser());
 app.use(express.json());
 app.use(session({
     // secret key to sign session IDs
-    secret: "secretKey",
+    secret: process.env.SESSION_SECRET || "dev-only-change-me",
     //prevent saving any empty sessions
     saveUninitialized: false, 
     //prevent any resaving of unchanged sessions
@@ -142,28 +143,29 @@ app.get("/logout", (req, res) => {
 // For login submissions
 app.post("/login", (req, res) => {
     //extract the email and password from the request body
-    const { email, password } = req.body; 
-    //to find user with matching credentials
-    const query = "SELECT * FROM users WHERE email = ? AND password = ?";
+    const { email, password } = req.body;
+    //look the user up by email only, then verify the password hash separately
+    const query = "SELECT * FROM users WHERE email = ?";
 
-    console.log('Executing query:', query, 'with parameters:', [email, password]);
-
-    global.db.get(query, [email, password], function (err, user) {
+    global.db.get(query, [email], async function (err, user) {
         if (err) {
-            console.error('Error executing query:', err);
+            console.error('Error executing login query:', err);
             return res.status(500).send(err.message);
         }
-        if (user) {
-            // Authenticate user and set session
-            req.session.user = user;
-            req.session.isAuthenticated = true;
 
-            // Redirect to home page after successful login
-            res.redirect('/');
-        } else {
-            //error message on login failure
-            res.render('login.ejs', { error: 'Incorrect email or password.' }); 
+        //same generic message whether the email or the password was wrong,
+        //so the response cannot be used to discover which accounts exist
+        if (!user || !(await bcrypt.compare(password, user.password))) {
+            return res.render('login.ejs', { error: 'Incorrect email or password.' });
         }
+
+        //strip the hash before the user object goes into the session store
+        const { password: _hash, ...safeUser } = user;
+        req.session.user = safeUser;
+        req.session.isAuthenticated = true;
+
+        // Redirect to home page after successful login
+        res.redirect('/');
     });
 });
 
@@ -211,10 +213,12 @@ app.post("/register", async (req, res) => {
             return res.render("register.ejs", { courses, error: 'Email is already in use.' });
         }
 
-        // Insert new user into the database without hashing the password
+        // Hash the password before it ever reaches the database
+        const hashedPassword = await bcrypt.hash(password, 10);
+
         const Userquery = "INSERT INTO users (name, password, email, course, description, rating) VALUES (?, ?, ?, ?, ?, 0)";
         await new Promise((resolve, reject) => {
-            global.db.run(Userquery, [name, password, email, course, description], function (err) {
+            global.db.run(Userquery, [name, hashedPassword, email, course, description], function (err) {
                 if (err) reject(err);
                 else resolve();
             });

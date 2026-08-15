@@ -1,0 +1,6 @@
+backend/database.db
+backend/sessionsDB.sqlite
+backend/sessions
+node_modules/
+.env
+.DS_Store
