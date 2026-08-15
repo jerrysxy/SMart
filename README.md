@@ -45,10 +45,7 @@ The backend serves the EJS views and static assets from `../frontend`, so there 
 
 ### Demo accounts
 
-| Email | Password |
-| --- | --- |
-| `seanTest@mymail.sim.edu.sg` | `P@ssword1` |
-| `matthewTest@mymail.sim.edu.sg` | `P@ssword2` |
+Register from the sign-up page, or read the seed accounts out of `backend/db_schema.sql` after building the database locally.
 
 Seed accounts defined in `db_schema.sql`, for local testing only.
 
