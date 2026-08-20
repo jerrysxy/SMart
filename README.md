@@ -4,7 +4,7 @@ A campus marketplace web application for students at the Singapore Institute of 
 
 Built by Team 58 for CM2020 Agile Software Projects, BSc Computer Science, University of London.
 
-[Live demo](https://smart-k1xu.onrender.com/) · [Demo video](https://drive.google.com/file/d/1T8clmBOWnLLcRw6_3YfdbfHe7PjVF7ig/view)
+[Demo video](https://drive.google.com/file/d/1T8clmBOWnLLcRw6_3YfdbfHe7PjVF7ig/view) · [Live demo](https://smart-k1xu.onrender.com/) (Render free tier, first request after inactivity can take up to a minute)
 
 ## Features
 
@@ -28,6 +28,15 @@ Built by Team 58 for CM2020 Agile Software Projects, BSc Computer Science, Unive
 
 Six normalised tables with foreign key constraints, `CHECK` validation and cascade rules, with `PRAGMA foreign_keys` enabled. Every database call uses parameterised queries. Full schema in [`backend/db_schema.sql`](backend/db_schema.sql).
 
+## Security
+
+The original submission stored and compared passwords in plaintext. Four findings were raised in a later code review and closed:
+
+1. **Plaintext password storage and comparison.** Passwords are hashed with bcrypt. Login looks the user up by email, then verifies the hash separately.
+2. **Credentials written to application logs.** The log line carrying submitted credentials was removed.
+3. **Password hash carried into the session store.** The hash is stripped from the user object before the session is created.
+4. **Hardcoded session secret.** The secret is read from the `SESSION_SECRET` environment variable.
+
 ## Running locally
 
 Requires **Node 20**. Newer versions have no prebuilt binary for `sqlite3` and will try to compile it from source.
@@ -43,30 +52,18 @@ Then open <http://localhost:3000>.
 
 The backend serves the EJS views and static assets from `../frontend`, so there is no separate frontend step.
 
-### Demo accounts
+### Accounts
 
-Register from the sign-up page, or read the seed accounts out of `backend/db_schema.sql` after building the database locally.
-
-Seed accounts defined in `db_schema.sql`, for local testing only.
+Register from the sign-up page. Seeded accounts exist for local testing only and are not intended for use.
 
 ### If the database fails to build
 
 `npm run build-db` pipes the schema through the `sqlite3` CLI. If that errors, run the schema directly to see the underlying SQL error:
 
 ```bash
-sqlite3 backend/database.db < backend/db_schema.sql
+sqlite3 backend/db_schema.sql
 ```
-
-## Security
-
-Authentication was reworked after the original submission:
-
-- Passwords are hashed with bcrypt instead of stored and compared in plaintext
-- Login looks users up by email, then verifies the hash separately
-- Submitted credentials are no longer written to application logs
-- The password hash is stripped from the user object before it enters the session store
-- The session secret is read from the `SESSION_SECRET` environment variable
 
 ## Notes on the live demo
 
-Hosted on Render's free tier. The first request after a period of inactivity can take up to a minute while the instance wakes. The filesystem is ephemeral, so data created on the live site does not survive a restart. Run it locally for a full picture.
+Hosted on Render's free tier. The filesystem is ephemeral, so data created on the live site does not survive a restart. Run it locally for a full picture.
